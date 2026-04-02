@@ -1,0 +1,48 @@
+env:
+  num_tasks: [5, 10, 20]
+  complexity: [low, medium, high]
+  max_steps: 50
+
+agents:
+  num_executors: [2, 4, 8]
+  planner_policy: [heuristic, random]
+
+training:
+  algorithm: [ppo, maddpg]
+  episodes: 500
+  seed: [0, 1, 2]  # multiple seeds for statistical significance
+
+ppo:
+  lr: 3e-4
+  gamma: 0.99
+  clip_eps: 0.2
+  epochs: 4
+  hidden: 64
+  rollout_len: 20
+
+maddpg:
+  lr_actor: 1e-4
+  lr_critic: 3e-4
+  gamma: 0.99
+  tau: 0.005
+  hidden: 128
+  batch_size: 128
+  buffer_capacity: 50000
+  warmup_steps: 500
+  update_every: 4
+
+ablation:
+  conditions: [full, no_evaluator, no_shaping, no_coord, random_planner]
+  num_tasks: 20
+  num_executors: 4
+  episodes: 500
+  eval_episodes: 50
+
+rewards:
+  completion_bonus: 100.0
+  step_penalty: 0.1
+  valid_assignment: 10.0
+  invalid_penalty: 5.0
+  idle_penalty: 2.0
+  coord_bonus: 2.0
+  parallel_bonus_per_task: 1.0
