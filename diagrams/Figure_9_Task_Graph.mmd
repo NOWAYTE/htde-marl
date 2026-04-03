@@ -1,0 +1,25 @@
+graph TD
+    T0([Task 0\nstatus: done\npriority: 0.82])
+    T1([Task 1\nstatus: done\npriority: 0.61])
+    T2([Task 2\nstatus: done\npriority: 0.74])
+    T3([Task 3\nstatus: done\npriority: 0.45])
+    T4([Task 4\nstatus: active\npriority: 0.91])
+    T5([Task 5\nstatus: active\npriority: 0.68])
+    T6([Task 6\nstatus: pending\npriority: 0.53])
+    T7([Task 7\nstatus: pending\npriority: 0.77])
+
+    T0 -->|dependency| T4
+    T1 -->|dependency| T4
+    T2 -->|dependency| T5
+    T3 -->|dependency| T6
+    T4 -->|dependency| T7
+    T5 -->|dependency| T7
+
+    style T0 fill:#90EE90,stroke:#2E8B57
+    style T1 fill:#90EE90,stroke:#2E8B57
+    style T2 fill:#90EE90,stroke:#2E8B57
+    style T3 fill:#90EE90,stroke:#2E8B57
+    style T4 fill:#FFD700,stroke:#B8860B
+    style T5 fill:#FFD700,stroke:#B8860B
+    style T6 fill:#FFB6C1,stroke:#DC143C
+    style T7 fill:#FFB6C1,stroke:#DC143C

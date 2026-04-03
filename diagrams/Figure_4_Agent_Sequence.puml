@@ -1,0 +1,61 @@
+@startuml
+skinparam sequenceArrowThickness 2
+skinparam backgroundColor #FAFAFA
+skinparam participant {
+  BackgroundColor #E8F4FD
+  BorderColor #2980B9
+}
+
+participant "HTDEEnv" as ENV
+participant "PlannerAgent" as PL
+participant "ExecutorAgent[0..N]" as EX
+participant "EvaluatorAgent" as EV
+participant "RewardShaping" as RS
+participant "CreditAssignment" as CA
+participant "LearningAlgorithm\n(PPO / MADDPG)" as LEARN
+
+== Episode Start ==
+ENV -> ENV : reset()\ngenerate_task_graph()\nstatus = pending
+
+loop Each Step (max_steps)
+
+  ENV -> PL : obs_planner\n{adj_matrix, task_status,\ntask_features, time_step}
+  PL -> PL : act(obs)\ncompute priority scores
+  PL --> ENV : priority_scores[N]
+
+  ENV -> EX : obs_executor_i\n{task_status, available_mask,\ntask_features, assigned_task}
+  EX -> EX : act(obs, priority_scores)\nselect task_id from available
+  EX --> ENV : task_id (or -1 if idle)
+
+  ENV -> EV : obs_evaluator\n{task_status, step}
+  EV -> EV : evaluate(obs, actions)\ncheck idle executors
+  EV --> ENV : eval_score (idle penalty)
+
+  ENV -> ENV : step(actions)\ncomplete active tasks\nassign new tasks\ncheck termination
+
+  ENV -> RS : compute_rewards(\nprev_status, curr_status,\nactions, adj_matrix, done)
+  RS -> RS : R_global + R_local\n+ R_coord + R_efficiency
+  RS --> ENV : raw_rewards{agent: float}
+
+  ENV -> CA : assign_credit(rewards)
+  CA -> CA : difference_reward\nD_i = R_global - R_counterfactual
+  CA --> ENV : credit_rewards{agent: float}
+
+  ENV -> LEARN : transition\n(obs, action, reward, next_obs, done)
+  LEARN -> LEARN : store in buffer\n(rollout / replay)
+
+  alt Every K steps (PPO rollout_len / MADDPG update_every)
+    LEARN -> LEARN : update policy\nPPO: clipped surrogate loss\nMADDPG: centralised critic
+  end
+
+  alt done == True
+    ENV -> ENV : break
+  end
+
+end
+
+== Episode End ==
+LEARN -> LEARN : log episode reward
+ENV -> ENV : reset() for next episode
+
+@enduml

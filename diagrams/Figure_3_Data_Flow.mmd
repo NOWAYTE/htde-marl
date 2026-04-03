@@ -1,0 +1,71 @@
+flowchart LR
+    subgraph INPUT["Inputs"]
+        A1[num_tasks\nnum_executors\ncomplexity]
+        A2[Random Seed]
+    end
+
+    subgraph GRAPH["Task Graph Generation"]
+        B1[Generate Random DAG\nupper-triangular adjacency]
+        B2[Sample Node Features\ndiffculty, priority]
+        B3[TaskGraph Object\nadj_matrix, status, features]
+    end
+
+    subgraph ENV["Environment"]
+        C1[Reset\nstatus = pending]
+        C2[Get Available Tasks\ndeps satisfied]
+        C3[Build Observations\nper agent]
+    end
+
+    subgraph AGENTS["Agent Action Selection"]
+        D1[Planner\nheuristic / PPO\npriority scores N]
+        D2[Executor i\ngreedy / PPO / MADDPG\ntask_id]
+        D3[Evaluator\nrule-based\nidle penalty]
+    end
+
+    subgraph STEP["Environment Step"]
+        E1[Complete active tasks\nmark status = done]
+        E2[Assign new tasks\nmark status = active]
+        E3[Check termination\nis_done or max_steps]
+    end
+
+    subgraph REWARD["Reward Computation"]
+        F1[R_global\n+100 done, -0.1/step]
+        F2[R_local\n+10 valid, -5 invalid, -2 idle]
+        F3[R_coord\n+2 all executors active]
+        F4[R_efficiency\n+N parallel completions]
+        F5[R_total = sum]
+    end
+
+    subgraph CREDIT["Credit Assignment"]
+        G1[Difference Rewards\nD_i = R_global - R_counterfactual]
+    end
+
+    subgraph LEARN["Policy Update"]
+        H1[PPO\nRollout buffer\nClipped surrogate loss]
+        H2[MADDPG\nReplay buffer\nCentralised critic update]
+    end
+
+    A1 --> B1
+    A2 --> B1
+    B1 --> B2 --> B3
+    B3 --> C1 --> C2 --> C3
+    C3 --> D1
+    C3 --> D2
+    C3 --> D3
+    D1 --> D2
+    D2 --> E1
+    D3 --> E1
+    E1 --> E2 --> E3
+    E2 --> F1
+    E2 --> F2
+    E2 --> F3
+    E2 --> F4
+    F1 --> F5
+    F2 --> F5
+    F3 --> F5
+    F4 --> F5
+    F5 --> G1
+    G1 --> H1
+    G1 --> H2
+    E3 -->|not done| C2
+    E3 -->|done| OUTPUT["Episode End\nLog metrics"]

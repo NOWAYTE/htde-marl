@@ -1,0 +1,30 @@
+flowchart TD
+    A([Start PPO Update]) --> B[Collect Rollout\nT = rollout_len steps\nstore obs, actions, log_probs,\nrewards, dones, masks]
+
+    B --> C[Compute Discounted Returns\nR_t = r_t + gamma * R_{t+1} * 1-done]
+
+    C --> D[Convert to Tensors\nobs, acts, old_log_probs,\nreturns, masks]
+
+    D --> E[For epoch = 1 to K epochs]
+
+    E --> F[Forward Pass\nPolicyNet obs\nlogits, values]
+
+    F --> G[Apply Action Mask\nlogits masked_fill mask==0 to -inf]
+
+    G --> H[Compute Distribution\nCategorical logits\nlog_probs, entropy]
+
+    H --> I[Compute Advantages\nA_t = returns_t - values_t detached\nNormalise: A = A - mean A / std A + eps]
+
+    I --> J[Compute Probability Ratio\nratio = exp log_prob - old_log_prob]
+
+    J --> K[Clipped Surrogate Loss\nsurr1 = ratio * A\nsurr2 = clip ratio, 1-eps, 1+eps * A\nactor_loss = -min surr1, surr2 .mean]
+
+    K --> L[Value Loss\ncritic_loss = returns - values ^2 .mean]
+
+    L --> M[Total Loss\nloss = actor_loss\n+ 0.5 * critic_loss\n- 0.01 * entropy]
+
+    M --> N[Backpropagation\noptimizer.zero_grad\nloss.backward\noptimizer.step]
+
+    N --> O{More epochs?}
+    O -->|Yes| E
+    O -->|No| P([Return loss])

@@ -1,0 +1,30 @@
+flowchart TD
+    A([Start Experiments]) --> B[Load configs.yaml\nnum_tasks: 5,10,20\nnum_executors: 2,4,8\ncomplexity: low,medium,high\nseeds: 0,1,2]
+
+    B --> C{Experiment Type}
+
+    C -->|PPO vs MADDPG\ncomparison| D[For each seed 0,1,2]
+    C -->|Ablation Study| E[For each condition\nfull, no_evaluator,\nno_shaping, no_coord,\nrandom_planner]
+
+    D --> F[Train PPO\n400 episodes\nnum_tasks=20, num_exec=4]
+    D --> G[Train MADDPG\n400 episodes\nnum_tasks=20, num_exec=4]
+
+    F --> H[Evaluate PPO\n50 greedy episodes]
+    G --> I[Evaluate MADDPG\n50 greedy episodes]
+
+    H --> J[Compute Metrics\ntask_completion_rate\navg_reward mean±std\nconvergence_speed\ncoordination_efficiency]
+    I --> J
+
+    E --> K[Patch reward function\nper ablation condition]
+    K --> L[Train PPO\n400 episodes per seed]
+    L --> M[Evaluate\n50 greedy episodes]
+    M --> N[Compute Metrics\nper condition]
+
+    J --> O[Aggregate across seeds\nmean ± std]
+    N --> O
+
+    O --> P[Generate Plots\nShaded learning curves\nError bar metrics\nAblation comparison]
+
+    P --> Q[Save Results\nresults/multiseed/\nlearning_curves.png\nmetrics_comparison.png\nablation_curves.png\nablation_metrics.png]
+
+    Q --> R([End Experiments])

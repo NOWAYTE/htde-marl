@@ -1,0 +1,21 @@
+flowchart TD
+    A[Task Graph Generator] -->|Random DAG\nnum_tasks, complexity| B[HTDEEnv]
+    B -->|Full graph obs\nadj_matrix, status, features| C[Planner Agent]
+    B -->|Local obs\nstatus, available_mask, features| D[Executor Agent 1]
+    B -->|Local obs\nstatus, available_mask, features| E[Executor Agent 2]
+    B -->|Local obs\nstatus, available_mask, features| F[Executor Agent N]
+    B -->|Execution history\ntask_status, step| G[Evaluator Agent]
+    C -->|Priority scores\nover all tasks| D
+    C -->|Priority scores\nover all tasks| E
+    C -->|Priority scores\nover all tasks| F
+    D -->|task_id| H[Environment Step]
+    E -->|task_id| H
+    F -->|task_id| H
+    G -->|Idle penalty signal| H
+    H -->|R_global + R_local\n+ R_coord + R_efficiency| I[Reward Shaping]
+    I -->|Difference rewards\nper agent| J[Credit Assignment]
+    J -->|Agent-specific rewards| K[Learning Algorithm\nPPO / MADDPG]
+    K -->|Updated policies| D
+    K -->|Updated policies| E
+    K -->|Updated policies| F
+    H -->|Next state| B

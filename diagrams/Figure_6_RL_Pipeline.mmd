@@ -1,0 +1,34 @@
+flowchart TD
+    A([Start Training]) --> B[Initialise Environment\nHTDEEnv: num_tasks, num_executors,\ncomplexity, max_steps]
+    B --> C[Initialise Agents\nPPO: PolicyNet per executor\nMADDPG: Actor+Critic per executor]
+    C --> D[Initialise Buffer\nPPO: rollout dict\nMADDPG: ReplayBuffer capacity=50000]
+
+    D --> E[Episode Start\nenv.reset\ngenerate new TaskGraph]
+
+    E --> F[Collect Observation\nplanner: full graph\nexecutors: local view]
+
+    F --> G{Algorithm?}
+
+    G -->|PPO| H[Action Selection\nPolicyNet forward pass\nApply action mask\nSample from Categorical dist]
+    G -->|MADDPG| I[Action Selection\nActor forward pass\nApply availability mask\nAdd Gumbel noise for exploration\nAnneal noise over training]
+
+    H --> J[Execute Actions\nenv.step actions]
+    I --> J
+
+    J --> K[Compute Rewards\nreward_shaping.compute_rewards\nR_global + R_local + R_coord + R_efficiency]
+    K --> L[Store Transition\nPPO: append to rollout\nMADDPG: push to ReplayBuffer]
+
+    L --> M{Update condition?}
+    M -->|PPO: rollout_len reached| N[PPO Update\nCompute discounted returns\nNormalise advantages\nK epochs clipped surrogate loss\nValue loss + entropy bonus]
+    M -->|MADDPG: warmup done\nand every update_every steps| O[MADDPG Update\nSample batch from ReplayBuffer\nUpdate centralised critic MSE loss\nUpdate decentralised actor\nSoft update target networks tau=0.005]
+    M -->|Not yet| P{Episode done?}
+    N --> P
+    O --> P
+
+    P -->|No| F
+    P -->|Yes| Q[Log episode reward\nCheck convergence]
+
+    Q --> R{Max episodes\nreached?}
+    R -->|No| E
+    R -->|Yes| S[Evaluate\nrun_eval 50 greedy episodes\ncompute_metrics]
+    S --> T([End Training\nSave results + plots])

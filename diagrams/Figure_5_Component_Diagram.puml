@@ -1,0 +1,113 @@
+@startuml
+skinparam classBackgroundColor #E8F4FD
+skinparam classBorderColor #2980B9
+skinparam backgroundColor #FAFAFA
+
+class TaskGraph {
+  +num_nodes: int
+  +adj_matrix: ndarray
+  +node_features: ndarray
+  +status: ndarray
+  --
+  +get_available_tasks(): List[int]
+  +mark_active(task_id: int)
+  +mark_completed(task_id: int)
+  +is_done(): bool
+  +reset()
+}
+
+class HTDEEnv {
+  +num_tasks: int
+  +num_executors: int
+  +complexity: str
+  +max_steps: int
+  +graph: TaskGraph
+  --
+  +reset(): dict
+  +step(actions: dict): tuple
+  -_get_obs(): dict
+}
+
+class PlannerAgent {
+  +policy: str
+  --
+  +act(obs: dict): ndarray
+}
+
+class ExecutorAgent {
+  +agent_id: int
+  +policy: str
+  --
+  +act(obs: dict, planner_scores: ndarray): int
+}
+
+class EvaluatorAgent {
+  +evaluate(obs: dict, actions: dict,\nnum_executors: int): float
+}
+
+class PolicyNet {
+  +obs_dim: int
+  +action_dim: int
+  +hidden: int
+  --
+  +forward(x): tuple
+  +act(x, mask): tuple
+}
+
+class PPOAgent {
+  +gamma: float
+  +clip_eps: float
+  +epochs: int
+  +policy: PolicyNet
+  --
+  +act(obs_vec, mask): tuple
+  +update(rollout: dict): float
+  -_returns(rewards, dones): list
+}
+
+class Actor {
+  +obs_dim: int
+  +act_dim: int
+  --
+  +forward(x): Tensor
+}
+
+class Critic {
+  +total_obs_dim: int
+  +total_act_dim: int
+  --
+  +forward(obs_all, acts_all): Tensor
+}
+
+class MADDPGAgent {
+  +agent_id: int
+  +gamma: float
+  +tau: float
+  +actor: Actor
+  +actor_target: Actor
+  +critic: Critic
+  +critic_target: Critic
+  --
+  +act(obs, mask, noise): int
+  +update(batch, all_agents, obs_dim)
+  -_soft_update(src, tgt)
+}
+
+class ReplayBuffer {
+  +capacity: int
+  +buffer: deque
+  --
+  +push(transition: dict)
+  +sample(batch_size: int): list
+}
+
+HTDEEnv *-- TaskGraph : contains
+HTDEEnv --> PlannerAgent : sends obs
+HTDEEnv --> ExecutorAgent : sends obs
+HTDEEnv --> EvaluatorAgent : sends state
+PPOAgent *-- PolicyNet : contains
+MADDPGAgent *-- Actor : contains
+MADDPGAgent *-- Critic : contains
+MADDPGAgent --> ReplayBuffer : uses
+
+@enduml

@@ -1,0 +1,76 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #E8F4FD
+  BorderColor #2980B9
+}
+
+package "htde_marl" {
+
+  package "env" {
+    [htde_env\nHTDEEnv] as ENV
+    [task_graph\nTaskGraph] as TG
+    [generator\ngenerate_task_graph] as GEN
+  }
+
+  package "agents" {
+    [planner\nPlannerAgent] as PL
+    [executor\nExecutorAgent] as EX
+    [evaluator\nEvaluatorAgent] as EV
+  }
+
+  package "learning" {
+    [ppo_multiagent\nPPOAgent, PolicyNet] as PPO
+    [maddpg\nMADDPGAgent, Actor, Critic] as MADDPG
+    [replay_buffer\nReplayBuffer] as RB
+  }
+
+  package "rewards" {
+    [reward_shaping\ncompute_rewards] as RS
+    [credit_assignment\nassign_credit] as CA
+  }
+
+  package "experiments" {
+    [train\ntrain_ppo] as TR
+    [train_maddpg\ntrain_maddpg] as TM
+    [evaluate\nrun_eval] as EV2
+    [compare\nPPO vs MADDPG] as CMP
+    [ablation\nrun_ablations] as ABL
+    [multiseed\nrun_comparison] as MS
+  }
+
+  package "utils" {
+    [metrics\ncompute_metrics] as MET
+  }
+}
+
+GEN --> TG : creates
+TG --> ENV : used by
+ENV --> PL : observations
+ENV --> EX : observations
+ENV --> EV : state
+PL --> EX : priority scores
+EX --> ENV : task_id actions
+EV --> ENV : idle penalty
+ENV --> RS : prev/curr status\n+ actions
+RS --> CA : raw rewards
+CA --> PPO : agent rewards
+CA --> MADDPG : agent rewards
+MADDPG --> RB : transitions
+RB --> MADDPG : sampled batch
+TR --> ENV : training loop
+TR --> PPO : trains
+TM --> ENV : training loop
+TM --> MADDPG : trains
+EV2 --> ENV : eval loop
+EV2 --> MET : computes
+CMP --> TR : runs PPO
+CMP --> TM : runs MADDPG
+CMP --> EV2 : evaluates
+ABL --> TR : per condition
+ABL --> EV2 : evaluates
+MS --> CMP : multi-seed
+MS --> ABL : multi-seed
+
+@enduml
