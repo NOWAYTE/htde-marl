@@ -10,6 +10,9 @@ __pycache__/
 venv/
 env/
 
+# Allow htde_marl subpackages
+!htde_marl/env/
+
 # Results / outputs (too large for git)
 results/
 
